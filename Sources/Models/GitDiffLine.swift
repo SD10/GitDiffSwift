@@ -24,7 +24,12 @@ public struct GitDiffLine: Codable {
 
     public var newLine: Int
 
+    public var noNewLine = false
+
     internal var description: String {
+        if noNewLine {
+            return text + "\n" + "\\ No newline at end of file"
+        }
         return text
     }
 

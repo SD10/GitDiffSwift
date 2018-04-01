@@ -21,13 +21,11 @@ final class DiffParser {
         internal static let previousFile = "--- a/"
         internal static let updatedFile = "+++ b/"
         internal static let hunk = "@@"
+        internal static let newLine = "\\ No newline at end of file"
     }
 
     let input: String
     var state: LineState
-
-    var currentDiff: GitDiff?
-    var currentHunk: GitHunk?
 
     init(input: String) {
         self.input = input
@@ -156,6 +154,12 @@ final class DiffParser {
             case line.hasPrefix("index"):
                 let indexInfo = parseIndexInfo(line)
                 diffInfo["index"] = indexInfo
+            case line.hasPrefix(GitPrefix.newLine):
+                if !changes.isEmpty {
+                    var lastChange = changes.removeLast()
+                    lastChange["noNewLine"] = true
+                    changes.append(lastChange)
+                }
             default:
                 let diffLine = parseDiffLine(line)
                 changes.append(diffLine)
