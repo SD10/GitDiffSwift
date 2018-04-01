@@ -20,9 +20,9 @@ public struct GitDiffLine: Codable {
 
     public var text: String
 
-    public var oldLine: Int?
+    public var oldLine: Int
 
-    public var newLine: Int?
+    public var newLine: Int
 
     internal var description: String {
         return text
