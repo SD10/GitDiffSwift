@@ -10,11 +10,13 @@ import Foundation
 
 public struct GitDiff: Codable {
 
-    public var previousFilePath = ""
+    public var previousFilePath: String
 
-    public var updatedFilePath = ""
+    public var updatedFilePath: String
 
-    public var hunks: [GitHunk] = []
+    public var index: GitIndex
+
+    public var hunks: [GitHunk]
 
     internal var description: String {
         let prefix = "diff --git"
@@ -23,7 +25,7 @@ public struct GitDiff: Codable {
         let diffHeader = prefix + " " + fileA + " " + fileB
         let old = "--- " + fileA
         let new = "+++ " + fileB
-        let headerContent = diffHeader + "\n" + old + "\n" + new
+        let headerContent = diffHeader + "\n" + index.description + "\n" + old + "\n" + new
         var body = headerContent
         for hunk in hunks {
             body += "\n"

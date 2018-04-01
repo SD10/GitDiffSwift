@@ -7,8 +7,6 @@
 //
 
 // TODO:
-// - Fix double new lines
-// - Parse index
 // - Handle no new line
 
 import Foundation
@@ -44,6 +42,18 @@ final class DiffParser {
         default:
             return .unchanged
         }
+    }
+
+    func parseIndexInfo(_ input: String) -> [String: String] {
+        let trimmed = input.removingPrefix("index ")
+        let components = trimmed.components(separatedBy: " ")
+        let id = components.last!
+        let commits = components.first!.components(separatedBy: "..")
+        var indexInfo: [String: String] = [:]
+        indexInfo["id"] = id
+        indexInfo["commitHead"] = commits[0]
+        indexInfo["commitTail"] = commits[1]
+        return indexInfo
     }
 
     func parseHunkHeader(_ input: String) -> [String: Any] {
@@ -143,7 +153,8 @@ final class DiffParser {
                 let hunkHeader = parseHunkHeader(line)
                 hunks.append(hunkHeader)
             case line.hasPrefix("index"):
-                continue
+                let indexInfo = parseIndexInfo(line)
+                diffInfo["index"] = indexInfo
             default:
                 let diffLine = parseDiffLine(line)
                 changes.append(diffLine)

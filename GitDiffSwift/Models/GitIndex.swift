@@ -10,8 +10,14 @@ import Foundation
 
 public struct GitIndex: Codable {
 
+    public let id: String
+
     public let commitHead: String
 
     public let commitTail: String
+
+    internal var description: String {
+        return "index " + commitHead + ".." + commitTail + " " + id
+    }
 
 }
