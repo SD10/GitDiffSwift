@@ -15,12 +15,16 @@ GitDiffSwift is a git diff parser written in Swift.
 pod 'GitDiffSwift'
 ````
 
-### [Carthage]
+### Carthage
+Make the following entry in your Cartfile:
 ````
+github "SD10/GitDiffSwift"
 ````
 
-### [Swift Package Manager]
-````
+### Swift Package Manager
+To integrate using Apple's Swift package manager, add the following as a dependency to your `Package.swift`:
+````swift
+.package(url: "https://github.com/SD10/GitDiffSwift.git", .upToNextMajor(from: "0.0.1"))
 ````
 
 ## Contributing

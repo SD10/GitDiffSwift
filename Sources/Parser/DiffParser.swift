@@ -8,6 +8,7 @@
 
 // TODO:
 // - Handle no new line
+// - Handle other diff modes
 
 import Foundation
 
