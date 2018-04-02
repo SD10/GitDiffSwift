@@ -6,15 +6,11 @@
 //  Copyright © 2018 GitDiffSwift. All rights reserved.
 //
 
-// TODO:
-// - Handle no new line
-// - Handle other diff modes
-
 import Foundation
 
 final class DiffParser {
 
-    private enum GitPrefix {
+    internal enum GitPrefix {
         internal static let diffHeader = "diff --git"
         internal static let deletedFile = "+++ /dev/null"
         internal static let addedFile = "--- /dev/null"
@@ -24,78 +20,15 @@ final class DiffParser {
         internal static let newLine = "\\ No newline at end of file"
     }
 
-    let input: String
-    var state: LineState
+    internal let input: String
+    internal var state: LineState
 
-    init(input: String) {
+    public init(input: String) {
         self.input = input
         self.state = LineState()
     }
 
-    func diffType(for line: String) -> LineType {
-        switch true {
-        case line.hasPrefix("+"):
-            return .addition
-        case line.hasPrefix("-"):
-            return .deletion
-        default:
-            return .unchanged
-        }
-    }
-
-    func parseIndexInfo(_ input: String) -> [String: String] {
-        let trimmed = input.removingPrefix("index ")
-        let components = trimmed.components(separatedBy: " ")
-        let id = components.last!
-        let commits = components.first!.components(separatedBy: "..")
-        var indexInfo: [String: String] = [:]
-        indexInfo["id"] = id
-        indexInfo["commitHead"] = commits[0]
-        indexInfo["commitTail"] = commits[1]
-        return indexInfo
-    }
-
-    func parseHunkHeader(_ input: String) -> [String: Any] {
-
-        let indices = input.indices(where: { $0 == "@" })
-        let hunkEndIndex = input.index(input.startIndex, offsetBy: indices[3] + 1)
-        let hunkData = input[input.startIndex...hunkEndIndex]
-        let remainingText = String(input[hunkEndIndex..<input.endIndex])
-
-        let trimmed = String(String(hunkData.dropFirst(3).dropLast(3)))
-        let hunkText = trimmed.split(separator: " ")
-
-        let oldHunkInfo = hunkText[0].dropFirst(1).split(separator: ",")
-        let newHunkInfo = hunkText[1].dropFirst(1).split(separator: ",")
-
-        var hunkInfo: [String: Any] = [:]
-        hunkInfo["oldLineStart"] = Int(oldHunkInfo[0])!
-        hunkInfo["oldLineSpan"] = Int(oldHunkInfo[1])!
-        hunkInfo["newLineStart"] = Int(newHunkInfo[0])!
-        hunkInfo["newLineSpan"] = Int(newHunkInfo[1])!
-        hunkInfo["text"] = remainingText
-
-        return hunkInfo
-    }
-
-    func parseDiffLine(_ line: String) -> [String: Any] {
-        let type = diffType(for: line)
-
-        state.updateForLine(type: type)
-
-        let oldLine = state.currentOldLine
-        let newLine = state.currentNewLine
-
-        var lineInfo: [String: Any] = [:]
-        lineInfo["type"] = type.rawValue
-        lineInfo["text"] = line
-        lineInfo["newLine"] = newLine
-        lineInfo["oldLine"] = oldLine
-
-        return lineInfo
-    }
-
-    func extractDiffs() -> [GitDiff] {
+    public func parseDiffedFiles() -> [GitDiff] {
 
         let inputLines = input.split(separator: "\n", maxSplits: .max, omittingEmptySubsequences: false)
 
@@ -172,53 +105,70 @@ final class DiffParser {
 
         return diffs
     }
-}
 
-internal struct LineState {
-    var isFirstLine = true
-    var currentOldLine = 0
-    var currentNewLine = 0
+    // MARK: - Helpers
 
-    mutating func updateForLine(type: LineType) {
-        guard !isFirstLine else {
-            isFirstLine = false
-            return
-        }
-        switch type {
-        case .unchanged:
-            currentOldLine += 1
-            currentNewLine += 1
-        case .addition:
-            currentNewLine += 1
-        case .deletion:
-            currentOldLine += 1
+    internal func diffType(for line: String) -> LineType {
+        switch true {
+        case line.hasPrefix("+"):
+            return .addition
+        case line.hasPrefix("-"):
+            return .deletion
+        default:
+            return .unchanged
         }
     }
 
-    mutating func reset(newLineStart: Int, oldLineStart: Int) {
-        self.isFirstLine = true
-        self.currentNewLine = newLineStart
-        self.currentOldLine = oldLineStart
-    }
-}
-
-extension String {
-
-    func removingPrefix(_ prefix: String) -> String {
-        guard hasPrefix(prefix) else { return self }
-        return String(dropFirst(prefix.count))
+    internal func parseIndexInfo(_ input: String) -> [String: String] {
+        let trimmed = input.removingPrefix("index ")
+        let components = trimmed.components(separatedBy: " ")
+        let id = components.last!
+        let commits = components.first!.components(separatedBy: "..")
+        var indexInfo: [String: String] = [:]
+        indexInfo["id"] = id
+        indexInfo["commitHead"] = commits[0]
+        indexInfo["commitTail"] = commits[1]
+        return indexInfo
     }
 
-}
+    internal func parseHunkHeader(_ input: String) -> [String: Any] {
 
-extension Collection {
+        let indices = input.indices(where: { $0 == "@" })
+        let hunkEndIndex = input.index(input.startIndex, offsetBy: indices[3] + 1)
+        let hunkData = input[input.startIndex...hunkEndIndex]
+        let remainingText = String(input[hunkEndIndex..<input.endIndex])
 
-    func indices(where condition: (Element) throws -> Bool) rethrows -> [Int] {
-        var indices: [Int] = []
-        for (index, value) in enumerated() {
-            if try condition(value) { indices.append(index) }
-        }
-        return indices
+        let trimmed = String(String(hunkData.dropFirst(3).dropLast(3)))
+        let hunkText = trimmed.split(separator: " ")
+
+        let oldHunkInfo = hunkText[0].dropFirst(1).split(separator: ",")
+        let newHunkInfo = hunkText[1].dropFirst(1).split(separator: ",")
+
+        var hunkInfo: [String: Any] = [:]
+        hunkInfo["oldLineStart"] = Int(oldHunkInfo[0])!
+        hunkInfo["oldLineSpan"] = Int(oldHunkInfo[1])!
+        hunkInfo["newLineStart"] = Int(newHunkInfo[0])!
+        hunkInfo["newLineSpan"] = Int(newHunkInfo[1])!
+        hunkInfo["text"] = remainingText
+
+        return hunkInfo
+    }
+
+    internal func parseDiffLine(_ line: String) -> [String: Any] {
+        let type = diffType(for: line)
+
+        state.updateForLine(type: type)
+
+        let oldLine = state.currentOldLine
+        let newLine = state.currentNewLine
+
+        var lineInfo: [String: Any] = [:]
+        lineInfo["type"] = type.rawValue
+        lineInfo["text"] = line
+        lineInfo["newLine"] = newLine
+        lineInfo["oldLine"] = oldLine
+
+        return lineInfo
     }
 
 }
